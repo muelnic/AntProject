@@ -1,44 +1,36 @@
 import pygame
-
-
+import sys
 
 pygame.init()
 
-SCREEN_WIDTH = 1000
+
+NODE_RADIUS = 15
+NODE_COLOR = (255, 0, 0)
+BACKGROUND_COLOR = (0, 0, 0)
+num_rows = 5
+num_columns = 20
+SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
 
+def draw_graph(screen, num_rows, num_columns, width, height):
+    for i in range(num_rows):
+        for j in range(num_columns):
+            x = (width / (num_columns + 1)) * (j + 1)
+            y = (height / (num_rows + 1)) * (i + 1)
+            pygame.draw.circle(screen, NODE_COLOR, (x, y), NODE_RADIUS)
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-n=16
-Nodes = []
-for i in range (1, n+1):
-    Nodes.append(i)
+pygame.display.set_caption("Graph")
 
 
-
-
-run=True
-while  run == True:
-    screen.fill((0,0,0))
-    for i in range(1, n+1):
-        if i <= 4:
-            x=(SCREEN_WIDTH/5)*i
-            y=(SCREEN_HEIGHT/5)
-        elif i <=8:
-            x=(SCREEN_WIDTH/5)*(i-4)
-            y=(SCREEN_HEIGHT/5)*2
-        elif i <=12:
-            x=(SCREEN_WIDTH/5)*(i-8)
-            y=(SCREEN_HEIGHT/5)*3
-        else:
-            x=(SCREEN_WIDTH/5)*(i-12)
-            y=(SCREEN_HEIGHT/5)*4
-        pygame.draw.circle(screen, (255, 0, 0), (x,y), 10, 0 )
-        print("test")
+running = True
+while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            run = False
-    pygame.display.update()
+            running = False
+    screen.fill(BACKGROUND_COLOR)
+    draw_graph(screen, num_rows, num_columns, SCREEN_WIDTH, SCREEN_HEIGHT)
+    pygame.display.flip()
 
 pygame.quit()
-
+sys.exit()
