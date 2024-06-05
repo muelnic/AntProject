@@ -12,6 +12,7 @@ num_columns = 5
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
 
+
 def draw_graph(screen, adjacency_list, num_rows, num_columns, width, height):
     node_positions = []
     for i in range(num_rows):
