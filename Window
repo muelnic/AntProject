@@ -11,6 +11,9 @@ num_rows = 5
 num_columns = 5
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
+reduction_amount=0.01
+pheromone_increase=0.03
+pheromone_start=0.1
 
 
 def draw_graph(screen, adjacency_list, num_rows, num_columns, width, height):
@@ -43,13 +46,13 @@ def generate_adjacency_list(num_rows, num_columns):
             node = i * num_columns + j
             neighbors = {}
             if i > 0:  # has top neighbor
-                neighbors[(i - 1) * num_columns + j] = 0.1
+                neighbors[(i - 1) * num_columns + j] = pheromone_start
             if i < num_rows - 1:  # has bottom neighbor
-                neighbors[(i + 1) * num_columns + j] = 0.1
+                neighbors[(i + 1) * num_columns + j] = pheromone_start
             if j > 0:  # has left neighbor
-                neighbors[i * num_columns + j - 1] = 0.1
+                neighbors[i * num_columns + j - 1] = pheromone_start
             if j < num_columns - 1:  # has right neighbor
-                neighbors[i * num_columns + j + 1] = 0.1
+                neighbors[i * num_columns + j + 1] = pheromone_start
             adjacency_list[node] = neighbors
     return adjacency_list
 
@@ -88,7 +91,7 @@ def ant_algorithm(graph, start, goal):
             cumulative_p += k / total_k
             if p <= cumulative_p:
                 # Increase the k value of the chosen edge
-                graph[vertex][next] += 0.01
+                graph[vertex][next] += pheromone_increase
 
                 if next == goal:
                     return path + [next]
@@ -96,6 +99,11 @@ def ant_algorithm(graph, start, goal):
                     stack.append((next, path + [next]))
                 break
     return None
+
+def reduce_k_values(graph, reduction_amount):
+    for neighbors in graph.values():
+        for neighbor in neighbors:
+            neighbors[neighbor] = max(0, neighbors[neighbor] - reduction_amount)
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Graph")
@@ -130,6 +138,7 @@ while running:
                 # Add the length of the path to path_overview
                 path_overview.append(len(full_path))
                 print(f"Complete path: {full_path}")
+                reduce_k_values(adjacency_list, reduction_amount)
     screen.fill(BACKGROUND_COLOR)
     draw_graph(screen, adjacency_list, num_rows, num_columns, SCREEN_WIDTH, SCREEN_HEIGHT)
     pygame.display.flip()
