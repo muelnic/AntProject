@@ -88,7 +88,7 @@ def ant_algorithm(graph, start, goal):
             cumulative_p += k / total_k
             if p <= cumulative_p:
                 # Increase the k value of the chosen edge
-                graph[vertex][next] += 0.2
+                graph[vertex][next] += 0.01
 
                 if next == goal:
                     return path + [next]
@@ -107,26 +107,33 @@ print(adjacency_list)
 # Define start and end nodes for ant algorithm
 start_node = 0  # Top-left corner
 end_node = num_rows * num_columns - 1  # Bottom-right corner
+path_overview=[]
 
-# Find path from start to end using ant algorithm
-path_to_goal = ant_algorithm(adjacency_list, start_node, end_node)
-path_back_to_start = ant_algorithm(adjacency_list, end_node, start_node)
 
-# Combine both paths
-full_path = path_to_goal + path_back_to_start[1:]
-print(f"Complete path: {full_path}")
 
 # Main loop
 running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            print(f"Path overview {path_overview}")
             running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                # Find path from start to end using ant algorithm
+                path_to_goal = ant_algorithm(adjacency_list, start_node, end_node)
+                path_back_to_start = ant_algorithm(adjacency_list, end_node, start_node)
+
+                # Combine both paths
+                full_path = path_to_goal + path_back_to_start[1:]
+                
+                # Add the length of the path to path_overview
+                path_overview.append(len(full_path))
+                print(f"Complete path: {full_path}")
     screen.fill(BACKGROUND_COLOR)
     draw_graph(screen, adjacency_list, num_rows, num_columns, SCREEN_WIDTH, SCREEN_HEIGHT)
     pygame.display.flip()
 
 pygame.quit()
 sys.exit()
-
 
