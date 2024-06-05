@@ -12,8 +12,8 @@ num_columns = 5
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
 reduction_amount=0.01
-pheromone_increase=0.03
-pheromone_start=0.1
+pheromone_increase=0.02
+pheromone_start=0.01
 
 
 def draw_graph(screen, adjacency_list, num_rows, num_columns, width, height):
