@@ -4,19 +4,19 @@ import sys
 
 pygame.init()
 
-NODE_RADIUS = 1.5
+NODE_RADIUS = 2
 NODE_COLOR = (255, 0, 0)
 START_COLOR = (255, 255, 0)  # Gelb für den Startknoten
 GOAL_COLOR = (0, 0, 255)      # Blau für die Zielknoten
 BACKGROUND_COLOR = (0, 0, 0)
-num_rows = 100
-num_columns = 100
+num_rows = 50
+num_columns = 50
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
 reduction_amount = 0.01
 pheromone_increase = 0.1
 pheromone_start = 0.1
-num_ants = 5000
+num_ants = 500
 MIN_PHEROMONE = 0.01
 Food1=(num_columns // 4)+((num_rows // 4)*num_rows)
 Food2=(num_columns // 4)+((num_rows // 4*3)*num_rows)

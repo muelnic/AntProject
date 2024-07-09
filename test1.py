@@ -11,10 +11,6 @@ num_rows = 5
 num_columns = 5
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
-reduction_amount=0.01
-pheromone_increase=0.02
-pheromone_start=0.01
-
 
 def draw_graph(screen, adjacency_list, num_rows, num_columns, width, height):
     node_positions = []
@@ -46,13 +42,13 @@ def generate_adjacency_list(num_rows, num_columns):
             node = i * num_columns + j
             neighbors = {}
             if i > 0:  # has top neighbor
-                neighbors[(i - 1) * num_columns + j] = pheromone_start
+                neighbors[(i - 1) * num_columns + j] = 0.1
             if i < num_rows - 1:  # has bottom neighbor
-                neighbors[(i + 1) * num_columns + j] = pheromone_start
+                neighbors[(i + 1) * num_columns + j] = 0.1
             if j > 0:  # has left neighbor
-                neighbors[i * num_columns + j - 1] = pheromone_start
+                neighbors[i * num_columns + j - 1] = 0.1
             if j < num_columns - 1:  # has right neighbor
-                neighbors[i * num_columns + j + 1] = pheromone_start
+                neighbors[i * num_columns + j + 1] = 0.1
             adjacency_list[node] = neighbors
     return adjacency_list
 
@@ -91,7 +87,7 @@ def ant_algorithm(graph, start, goal):
             cumulative_p += k / total_k
             if p <= cumulative_p:
                 # Increase the k value of the chosen edge
-                graph[vertex][next] += pheromone_increase
+                graph[vertex][next] += 0.2
 
                 if next == goal:
                     return path + [next]
@@ -99,11 +95,6 @@ def ant_algorithm(graph, start, goal):
                     stack.append((next, path + [next]))
                 break
     return None
-
-def reduce_k_values(graph, reduction_amount):
-    for neighbors in graph.values():
-        for neighbor in neighbors:
-            neighbors[neighbor] = max(0, neighbors[neighbor] - reduction_amount)
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Graph")
@@ -115,34 +106,24 @@ print(adjacency_list)
 # Define start and end nodes for ant algorithm
 start_node = 0  # Top-left corner
 end_node = num_rows * num_columns - 1  # Bottom-right corner
-path_overview=[]
 
+# Find path from start to end using ant algorithm
+path_to_goal = ant_algorithm(adjacency_list, start_node, end_node)
+path_back_to_start = ant_algorithm(adjacency_list, end_node, start_node)
 
+# Combine both paths
+full_path = path_to_goal + path_back_to_start[1:]
+print(f"Complete path: {full_path}")
 
 # Main loop
 running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            print(f"Path overview {path_overview}")
             running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                # Find path from start to end using ant algorithm
-                path_to_goal = ant_algorithm(adjacency_list, start_node, end_node)
-                path_back_to_start = ant_algorithm(adjacency_list, end_node, start_node)
-
-                # Combine both paths
-                full_path = path_to_goal + path_back_to_start[1:]
-                
-                # Add the length of the path to path_overview
-                path_overview.append(len(full_path))
-                print(f"Complete path: {full_path}")
-                reduce_k_values(adjacency_list, reduction_amount)
     screen.fill(BACKGROUND_COLOR)
     draw_graph(screen, adjacency_list, num_rows, num_columns, SCREEN_WIDTH, SCREEN_HEIGHT)
     pygame.display.flip()
 
 pygame.quit()
 sys.exit()
-
