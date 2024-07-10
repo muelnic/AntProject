@@ -147,6 +147,8 @@ class Ant:
                 if p <= cumulative_p:
                     self.current_node = next
                     self.path.append(next)
+                    #no pheromon increase if ant doesn't follow shortest path but self.returning is true
+                    #fix that!
                     if self.current_node in self.goals:
                         self.returning = True
                         if self.food_sources[self.current_node] > 1:
