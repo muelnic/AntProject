@@ -6,8 +6,10 @@ from pygame_widgets.textbox import TextBox
 import pygame_widgets
 import pandas as pd
 import warnings
+import os
 
 warnings.filterwarnings('ignore', category=UserWarning)
+
 
 pygame.init()
 
@@ -25,6 +27,11 @@ pheromone_start = 0.1
 num_food_sources = 100  # Anzahl der Nahrungsquellen
 MIN_PHEROMONE = 0.01
 prob_shortest_path=0.75
+
+run_name = "test_2"
+os.makedirs(run_name, exist_ok=True)
+
+print(f"Directory '{run_name}' created successfully.")
 
 def get_var(var_name, min_value, max_value, proposed_value, type):
     while True:
@@ -46,7 +53,7 @@ num_food_sources= get_var("num_food_sources", 1, 300, 100, int)
 
 
 
-standard_case = True # Definiere, ob Startpunkt in der Mitte ist (standard) oder an einer beliebigen Position
+standard_case = False # Definiere, ob Startpunkt in der Mitte ist (standard) oder an einer beliebigen Position
 # Neue Definitionen für den Start- und Zielknoten
 if standard_case:
     start_node = (num_rows // 2) * num_columns + (num_columns // 2)  # Start in der Mitte
@@ -78,7 +85,7 @@ def draw_graph(screen, adjacency_list, num_rows, num_columns, width, height, ant
         goal_x, goal_y = adjacency_list[goal_node]['pos']
         blue_intensity = int(size * 0.255)
         goal_color = (255 - blue_intensity, 255 - blue_intensity, 255)
-        pygame.draw.circle(screen, goal_color, (int(goal_x), int(goal_y)), NODE_RADIUS)
+        pygame.draw.circle(screen, goal_color, (int(goal_x), int(goal_y)), 5)
 
     for ant in ants:
         if standard_case:
@@ -88,7 +95,7 @@ def draw_graph(screen, adjacency_list, num_rows, num_columns, width, height, ant
             ant_of_interest = 0 # Nummer der Ameise, die man beobachten will, einstellen
             if ant != ants[ant_of_interest]:
                 x, y = adjacency_list[ant.current_node]['pos']
-                pygame.draw.circle(screen, (0,255,0), (int(x), int(y)), NODE_RADIUS)
+                pygame.draw.circle(screen, (0,255,0), (int(x), int(y)), 5)
             else:
                 x, y = adjacency_list[ant.current_node]['pos']
                 pygame.draw.circle(screen, (255,0,255), (int(x), int(y)), 15)
@@ -208,16 +215,16 @@ class Ant:
             self.returning = False
             self.path = [self.start]
         
-        #df_distance = pd.DataFrame(columns=["distance"]) # Dataframe erstellen zur Speicherung der Distanz von einer Food Source zum Nest
-        #for node in self.goals:
-        #    target_x_fs, target_y_fs = graph[self.start]['pos']
-        #    current_x_fs, current_y_fs = graph[node]['pos']
-        #    dx_fs = target_x_fs - current_x_fs
-        #    dy_fs = target_y_fs - current_y_fs
-        #    distance = abs(dx_fs) + abs(dy_fs)
-        #    df_distance.loc[node] = distance # berechnete Distanz in der dazugehörigen Reihe und Spalte des Dataframe speichern
+        df_distance = pd.DataFrame(columns=["distance"]) # Dataframe erstellen zur Speicherung der Distanz von einer Food Source zum Nest
+        for node in self.goals:
+            target_x_fs, target_y_fs = graph[self.start]['pos']
+            current_x_fs, current_y_fs = graph[node]['pos']
+            dx_fs = target_x_fs - current_x_fs
+            dy_fs = target_y_fs - current_y_fs
+            distance = abs(dx_fs) + abs(dy_fs)
+            df_distance.loc[node] = distance # berechnete Distanz in der dazugehörigen Reihe und Spalte des Dataframe speichern
 
-        return food, self.current_node#,df_distance
+        return food, self.current_node,df_distance
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Graph")
@@ -236,7 +243,7 @@ print(f"\nStartknoten (Nest der Ameisen): {start_node}")
 print(f"Zielknoten (Futterquellen): {end_nodes}")
 
 # Slider und Textboxen für verschiedene Variablen
-slider_num_ants = Slider(screen, 50, SCREEN_HEIGHT - 60, 150, 10, min=0, max=200, step=1,initial=100)
+slider_num_ants = Slider(screen, 50, SCREEN_HEIGHT - 60, 150, 10, min=0, max=200, step=1,initial=20)
 output_label_num_ants = TextBox(screen, 50, SCREEN_HEIGHT - 100, 100, 30, fontSize=20)
 output_value_num_ants = TextBox(screen, 215, SCREEN_HEIGHT - 70, 50, 20, fontSize=10)
 
@@ -298,9 +305,7 @@ while running:
         print("This is an important time step. We need to save it.") 
 
     for ant in ants:
-        # food, food_source, df_distance = ant.move(adjacency_list,counter=counter,ant_number=ant)
-        food, food_source = ant.move(adjacency_list,counter=counter,ant_number=ant)
-
+        food, food_source, df_distance = ant.move(adjacency_list,counter=counter,ant_number=ant)
         temp_list = [counter, ant, food_source, food]
         list_of_rows.append(temp_list)
     
@@ -313,7 +318,7 @@ while running:
     pygame.display.update()
     pygame.display.flip()
 
-#df_distance.to_excel("distance_of_food_source.xlsx")
+df_distance.to_excel(f"{run_name}/distance_of_food_source.xlsx")
 
 df = pd.DataFrame(list_of_rows,columns=["counter", "ant", "food_source", "food"])
 df_with_food = df[df["food"] != 0] # Filtert Einträge raus wo Food = 0 ist
@@ -324,24 +329,13 @@ df_sorted = df_with_food.sort_values(by=["counter","food_source"], ascending=[Tr
 # Duplikate löschen und nur den letzten Wert (d.h. die letzte Ameise pro Zeitschritt) behalten
 df_filtered = df_sorted.drop_duplicates(subset=['counter', 'food_source'], keep='last')
 
-print(df_filtered)
+df_filtered.to_excel(f"{run_name}/filtered_df.xlsx")
 
-for index in range(max(df_filtered["counter"])): # Iteration über alle Zeitschritte
-    for food_source in df_total_food.columns: # Iteration über alle Food Sources
-            temp_df_list = df_filtered.loc[df_filtered["counter"] == index,"food_source"].tolist() # für den jeweiligen Zeitschritt, machen wir eine Liste von allen Food Sources, welche sich darin verändert haben
-            if food_source in temp_df_list:
-                filtered_rows = df_filtered[(df_filtered['counter'] == index) & (df['food_source'] == food_source)] # Filtern nach Wert basierend auf Zeitschritt und Food Source
-                food_value = filtered_rows['food'].values[0] # Extrahieren des Wertes
-                df_total_food.loc[index,food_source] = food_value # Speichern des Wertes in der entsprechenden Zeile und Spalte des finalen Dataframes
-            else:
-                if index > 0:
-                    df_total_food.loc[index,food_source] = df_total_food.loc[index-1,food_source] # falls die Food Source nicht in der Liste der Food Sources ist, die sich in dem Zeitschritt ändert, wird der Wert vom vorherigen Zeitschritt übernommen
-                else:
-                    df_total_food.loc[index,food_source] = df_total_food.loc[0,food_source] # Spezialfall für Index = 0, dann entspricht der Wert im Dataframe einfach dem Startwert für die Food Source
+run_specifications = df_total_food
 
+run_specifications["counter"] = counter
 
-print(df_total_food)
-df_total_food.to_excel("food_over_time.xlsx")
+run_specifications.to_excel(f"{run_name}/run_specifications.xlsx")
 
 pygame.quit()
 sys.exit()
