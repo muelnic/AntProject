@@ -28,7 +28,7 @@ num_food_sources = 100  # Anzahl der Nahrungsquellen
 MIN_PHEROMONE = 0.01
 prob_shortest_path=0.75
 
-run_name = "test_1"
+run_name = "test_5"
 os.makedirs(run_name, exist_ok=True)
 
 print(f"Directory '{run_name}' created successfully.")
@@ -60,6 +60,7 @@ if standard_case:
 else:
     start_node = 1
 end_nodes = random.sample(range(num_rows * num_columns), num_food_sources)  # Zufällige Zielknoten
+
 food_sources = {node: random.randint(1, 1000) for node in end_nodes}  # Futterquellen mit zufälliger Größe
 start_food_sources = food_sources # Speichern in separater Variable
 df_total_food = pd.DataFrame([start_food_sources]) # Aus Dict einen Dataframe machen
@@ -214,22 +215,23 @@ class Ant:
         if self.current_node == self.start:
             self.returning = False
             self.path = [self.start]
-        
-        df_distance = pd.DataFrame(columns=["distance"]) # Dataframe erstellen zur Speicherung der Distanz von einer Food Source zum Nest
-        for node in self.goals:
-            target_x_fs, target_y_fs = graph[self.start]['pos']
-            current_x_fs, current_y_fs = graph[node]['pos']
-            dx_fs = target_x_fs - current_x_fs
-            dy_fs = target_y_fs - current_y_fs
-            distance = abs(dx_fs) + abs(dy_fs)
-            df_distance.loc[node] = distance # berechnete Distanz in der dazugehörigen Reihe und Spalte des Dataframe speichern
 
-        return food, self.current_node,df_distance
+        return food, self.current_node
+
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Graph")
 
 adjacency_list = generate_adjacency_list(num_rows, num_columns, start_node, end_nodes)
+df_distance = pd.DataFrame(columns=["distance"]) # Dataframe erstellen zur Speicherung der Distanz von einer Food Source zum Nest
+for node in end_nodes:
+    target_x_fs, target_y_fs = adjacency_list[start_node]['pos']
+    current_x_fs, current_y_fs = adjacency_list[node]['pos']
+    dx_fs = target_x_fs - current_x_fs
+    dy_fs = target_y_fs - current_y_fs
+    distance = abs(dx_fs) + abs(dy_fs)
+    df_distance.loc[node] = distance # berechnete Distanz in der dazugehörigen Reihe und Spalte des Dataframe speichern
+df_distance.to_excel(f"{run_name}/distance_of_food_source.xlsx")
 
 print("Adjazenzliste vor der Erstellung der Ameisen:")
 for node, data in adjacency_list.items():
@@ -243,7 +245,7 @@ print(f"\nStartknoten (Nest der Ameisen): {start_node}")
 print(f"Zielknoten (Futterquellen): {end_nodes}")
 
 # Slider und Textboxen für verschiedene Variablen
-slider_num_ants = Slider(screen, 50, SCREEN_HEIGHT - 60, 150, 10, min=0, max=200, step=1,initial=20)
+slider_num_ants = Slider(screen, 50, SCREEN_HEIGHT - 60, 150, 10, min=0, max=200, step=1,initial=100)
 output_label_num_ants = TextBox(screen, 50, SCREEN_HEIGHT - 100, 100, 30, fontSize=20)
 output_value_num_ants = TextBox(screen, 215, SCREEN_HEIGHT - 70, 50, 20, fontSize=10)
 
@@ -305,7 +307,7 @@ while running:
         print("This is an important time step. We need to save it.") 
 
     for ant in ants:
-        food, food_source, df_distance = ant.move(adjacency_list,counter=counter,ant_number=ant)
+        food, food_source = ant.move(adjacency_list,counter=counter,ant_number=ant)
         temp_list = [counter, ant, food_source, food]
         list_of_rows.append(temp_list)
     
@@ -318,7 +320,6 @@ while running:
     pygame.display.update()
     pygame.display.flip()
 
-df_distance.to_excel(f"{run_name}/distance_of_food_source.xlsx")
 
 df = pd.DataFrame(list_of_rows,columns=["counter", "ant", "food_source", "food"])
 df_with_food = df[df["food"] != 0] # Filtert Einträge raus wo Food = 0 ist

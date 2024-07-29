@@ -26,9 +26,15 @@ pheromone_increase = 0.1
 pheromone_start = 0.1
 num_food_sources = 100  # Anzahl der Nahrungsquellen
 MIN_PHEROMONE = 0.01
-prob_shortest_path=0.75
 
-run_name = "test_1"
+linear_pheromone_update=False
+#Wenn linear_pheromone_update=True werden die Pheromonwerte gemäss Ursprünglicher Implementation linar reduziert.
+#Wenn linear_pheromone_update=False werden die Pheromonwerte gemäss Literatur mit einem Faktor zwischen 0 und 1 multipliziert und somit reduziert.
+pheromone_always=False
+#Wenn pheromone_always=True werden Pheromone auf dem Hin- und Rückweg deponiert. -> Die Ameisen werden sich in einen Loop begeben.
+#Wenn pheromone_always=False werden Pheromone nur auf dem Rückweg deponiert.
+
+run_name = "test_6"
 os.makedirs(run_name, exist_ok=True)
 
 print(f"Directory '{run_name}' created successfully.")
@@ -47,10 +53,12 @@ def get_var(var_name, min_value, max_value, proposed_value, type):
         except ValueError:
             print("Ungültige Eingabe. Bitte geben Sie eine Zahl ein.")
 
+
+
 num_rows= get_var("num_rows", 10, 100, 50, int)
 num_columns= get_var("num_columns", 10, 100, 50, int)
 num_food_sources= get_var("num_food_sources", 1, 300, 100, int)
-
+prob_shortest_path_inital=get_var("prob_shortest_path",0,1,0.75, float)
 
 
 standard_case = True # Definiere, ob Startpunkt in der Mitte ist (standard) oder an einer beliebigen Position
@@ -60,6 +68,7 @@ if standard_case:
 else:
     start_node = 1
 end_nodes = random.sample(range(num_rows * num_columns), num_food_sources)  # Zufällige Zielknoten
+
 food_sources = {node: random.randint(1, 1000) for node in end_nodes}  # Futterquellen mit zufälliger Größe
 start_food_sources = food_sources # Speichern in separater Variable
 df_total_food = pd.DataFrame([start_food_sources]) # Aus Dict einen Dataframe machen
@@ -123,7 +132,10 @@ def generate_adjacency_list(num_rows, num_columns, start_node, end_nodes):
 def reduce_k_values(graph, reduction_amount):
     for node_data in graph.values():
         for data in node_data['neighbors'].values():
-            data['pheromone'] = max(MIN_PHEROMONE, data['pheromone'] - reduction_amount)
+            if linear_pheromone_update:
+                data['pheromone'] = max(MIN_PHEROMONE, data['pheromone'] - reduction_amount)
+            else:
+                data['pheromone'] = max(MIN_PHEROMONE, data['pheromone'] * (1-reduction_amount))
 
 class Ant:
     def __init__(self, start, goals, food_sources):
@@ -132,8 +144,11 @@ class Ant:
         self.start = start
         self.goals = goals
         self.food_sources = food_sources
-        self.returning = False
         self.return_steps = 0  # Zähler für Schritte während des Rückwegs
+        if pheromone_always:
+            self.returning = True
+        else:
+            self.returning = False
 
     def move(self, graph,counter,ant_number):
         p_shortest_path = random.random()
@@ -198,7 +213,8 @@ class Ant:
 
             # Überprüfen, ob die maximale Anzahl an Schritten erreicht ist
             if self.return_steps >= num_rows + num_columns:
-                self.returning = False
+                if not pheromone_always:
+                    self.returning = False
                 self.return_steps = 0  # Zähler zurücksetzen
         food = 0 # Variable intialisieren, um die Menge an Food in einer Food Source zu speichern
         if self.current_node in self.goals:
@@ -212,24 +228,26 @@ class Ant:
                 del self.food_sources[self.current_node]
         
         if self.current_node == self.start:
-            self.returning = False
+            if not pheromone_always:
+                self.returning = False
             self.path = [self.start]
-        
-        df_distance = pd.DataFrame(columns=["distance"]) # Dataframe erstellen zur Speicherung der Distanz von einer Food Source zum Nest
-        for node in self.goals:
-            target_x_fs, target_y_fs = graph[self.start]['pos']
-            current_x_fs, current_y_fs = graph[node]['pos']
-            dx_fs = target_x_fs - current_x_fs
-            dy_fs = target_y_fs - current_y_fs
-            distance = abs(dx_fs) + abs(dy_fs)
-            df_distance.loc[node] = distance # berechnete Distanz in der dazugehörigen Reihe und Spalte des Dataframe speichern
 
-        return food, self.current_node,df_distance
+        return food, self.current_node
+
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Graph")
 
 adjacency_list = generate_adjacency_list(num_rows, num_columns, start_node, end_nodes)
+df_distance = pd.DataFrame(columns=["distance"]) # Dataframe erstellen zur Speicherung der Distanz von einer Food Source zum Nest
+for node in end_nodes:
+    target_x_fs, target_y_fs = adjacency_list[start_node]['pos']
+    current_x_fs, current_y_fs = adjacency_list[node]['pos']
+    dx_fs = target_x_fs - current_x_fs
+    dy_fs = target_y_fs - current_y_fs
+    distance = abs(dx_fs) + abs(dy_fs)
+    df_distance.loc[node] = distance # berechnete Distanz in der dazugehörigen Reihe und Spalte des Dataframe speichern
+df_distance.to_excel(f"{run_name}/distance_of_food_source.xlsx")
 
 print("Adjazenzliste vor der Erstellung der Ameisen:")
 for node, data in adjacency_list.items():
@@ -243,19 +261,31 @@ print(f"\nStartknoten (Nest der Ameisen): {start_node}")
 print(f"Zielknoten (Futterquellen): {end_nodes}")
 
 # Slider und Textboxen für verschiedene Variablen
-slider_num_ants = Slider(screen, 50, SCREEN_HEIGHT - 60, 150, 10, min=0, max=200, step=1,initial=20)
+slider_num_ants = Slider(screen, 50, SCREEN_HEIGHT - 60, 150, 10, min=0, max=500, step=1,initial=0)
 output_label_num_ants = TextBox(screen, 50, SCREEN_HEIGHT - 100, 100, 30, fontSize=20)
 output_value_num_ants = TextBox(screen, 215, SCREEN_HEIGHT - 70, 50, 20, fontSize=10)
 
-slider_reduction_amount = Slider(screen, 50, SCREEN_HEIGHT - 160, 150, 10, min=0, max=0.1, step=0.001, initial=0.005)
+
+if linear_pheromone_update:
+    reduce_k_values_step=0.001
+    reduce_k_values_initial=0.005
+    reduce_k_values_max=0.1
+    pheromone_increase_initial=0.1
+else:
+    reduce_k_values_step=0.01
+    reduce_k_values_initial=0.05
+    reduce_k_values_max=1
+    pheromone_increase_initial=0.25
+
+slider_reduction_amount = Slider(screen, 50, SCREEN_HEIGHT - 160, 150, 10, min=0, max=reduce_k_values_max, step=reduce_k_values_step, initial=reduce_k_values_initial)
 output_label_reduction_amount = TextBox(screen, 50, SCREEN_HEIGHT - 200, 180, 30, fontSize=20)
 output_value_reduction_amount = TextBox(screen, 215, SCREEN_HEIGHT - 170, 50, 20, fontSize=10)
 
-slider_pheromone_increase = Slider(screen, 50, SCREEN_HEIGHT - 260, 150, 10, min=0, max=0.5, step=0.01, initial=0.1)
+slider_pheromone_increase = Slider(screen, 50, SCREEN_HEIGHT - 260, 150, 10, min=0, max=0.5, step=0.01, initial=pheromone_increase_initial)
 output_label_pheromone_increase = TextBox(screen, 50, SCREEN_HEIGHT - 300, 180, 30, fontSize=20)
 output_value_pheromone_increase = TextBox(screen, 215, SCREEN_HEIGHT - 270, 50, 20, fontSize=10)
 
-slider_prob_shortest_path = Slider(screen, 50, SCREEN_HEIGHT - 360, 150, 10, min=0, max=1, step=0.01, initial=0.75)
+slider_prob_shortest_path = Slider(screen, 50, SCREEN_HEIGHT - 360, 150, 10, min=0, max=1, step=0.01, initial=prob_shortest_path_inital)
 output_label_prob_shortest_path = TextBox(screen, 50, SCREEN_HEIGHT - 400, 180, 30, fontSize=20)
 output_value_prob_shortest_path = TextBox(screen, 215, SCREEN_HEIGHT - 370, 50, 20, fontSize=10)
 
@@ -305,7 +335,7 @@ while running:
         print("This is an important time step. We need to save it.") 
 
     for ant in ants:
-        food, food_source, df_distance = ant.move(adjacency_list,counter=counter,ant_number=ant)
+        food, food_source = ant.move(adjacency_list,counter=counter,ant_number=ant)
         temp_list = [counter, ant, food_source, food]
         list_of_rows.append(temp_list)
     
@@ -318,7 +348,6 @@ while running:
     pygame.display.update()
     pygame.display.flip()
 
-df_distance.to_excel(f"{run_name}/distance_of_food_source.xlsx")
 
 df = pd.DataFrame(list_of_rows,columns=["counter", "ant", "food_source", "food"])
 df_with_food = df[df["food"] != 0] # Filtert Einträge raus wo Food = 0 ist
