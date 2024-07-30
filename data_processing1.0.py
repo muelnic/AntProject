@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-run_name = "test_6"
+run_name = "test_11"
 
 df_filtered = pd.read_excel(f"{run_name}/filtered_df.xlsx")
 food_source_distance = pd.read_excel(f"{run_name}/distance_of_food_source.xlsx")
