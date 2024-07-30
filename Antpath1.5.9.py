@@ -15,7 +15,7 @@ pygame.init()
 
 NODE_RADIUS = 1
 NODE_COLOR = (255, 255, 255)
-START_COLOR = (255, 0, 0)  # Rot für den Startknoten
+START_COLOR = (0, 0, 0)  # Schwarz für den Startknoten
 BACKGROUND_COLOR = (255, 255, 255)  
 num_rows = 50
 num_columns = 50
