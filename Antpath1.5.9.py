@@ -28,6 +28,7 @@ num_food_sources = 100  # Anzahl der Nahrungsquellen
 MIN_PHEROMONE = 0.01
 widgets_draw = True
 paused = False
+inital_num_ants=0
 
 
 
@@ -265,7 +266,7 @@ print(f"\nStartknoten (Nest der Ameisen): {start_node}")
 print(f"Zielknoten (Futterquellen): {end_nodes}")
 
 # Slider und Textboxen für verschiedene Variablen
-slider_num_ants = Slider(screen, 50, SCREEN_HEIGHT - 60, 150, 10, min=0, max=500, step=1,initial=0)
+slider_num_ants = Slider(screen, 50, SCREEN_HEIGHT - 60, 150, 10, min=0, max=500, step=1,initial=inital_num_ants)
 output_label_num_ants = TextBox(screen, 50, SCREEN_HEIGHT - 100, 100, 30, fontSize=20)
 output_value_num_ants = TextBox(screen, 215, SCREEN_HEIGHT - 70, 50, 20, fontSize=10)
 
