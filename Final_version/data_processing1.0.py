@@ -3,14 +3,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-run_name = "test_11"
+run_name = "4.7_pheromone_always"
 
 df_filtered = pd.read_excel(f"{run_name}/filtered_df.xlsx")
 food_source_distance = pd.read_excel(f"{run_name}/distance_of_food_source.xlsx")
 multiple_food_sources = True # Falls man mehrere Food Sources haben will
 if multiple_food_sources:
-    max_distance = 400
-    min_distance = 0
+    max_distance = 800
+    min_distance = 400
     filtered_food_sources = list(food_source_distance.loc[((food_source_distance["distance"] <= max_distance) & (food_source_distance["distance"] >= min_distance)), "Unnamed: 0"])
 else:
     desired_food_source = 123

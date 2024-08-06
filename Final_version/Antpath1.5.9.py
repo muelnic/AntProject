@@ -28,7 +28,7 @@ num_food_sources = 100  # Anzahl der Nahrungsquellen
 MIN_PHEROMONE = 0.01
 widgets_draw = True
 paused = False
-inital_num_ants=0
+inital_num_ants=300
 
 
 
@@ -39,7 +39,7 @@ pheromone_always=False
 #Wenn pheromone_always=True werden Pheromone auf dem Hin- und Rückweg deponiert. -> Die Ameisen werden sich in einen Loop begeben.
 #Wenn pheromone_always=False werden Pheromone nur auf dem Rückweg deponiert.
 
-run_name = "test_11"
+run_name = "4.7_pheromone_always"
 os.makedirs(run_name, exist_ok=True)
 
 print(f"Directory '{run_name}' created successfully.")
@@ -313,9 +313,13 @@ output_value_prob_shortest_path.disable()
 running = True
 counter = 0
 list_of_rows = []
+important_timesteps = [1000]
+last_important_timestep = None
+
 while running:
     if not paused:
         counter += 1
+
     events = pygame.event.get()  # Alle Ereignisse sammeln
     for event in events:
         if event.type == pygame.QUIT:
@@ -325,6 +329,10 @@ while running:
                 widgets_draw = not widgets_draw  # Toggle the widget drawing state
             elif event.key == pygame.K_t:  # Toggle pause state with 'T'
                 paused = not paused
+                if paused:
+                    print("Paused")
+                else:
+                    print("Resumed")
 
     if paused:
         pygame.time.wait(100)  # Wait for a short period to avoid high CPU usage
@@ -344,10 +352,11 @@ while running:
     output_value_pheromone_increase.setText(str(pheromone_increase))
     output_value_prob_shortest_path.setText(str(prob_shortest_path))
 
-    list_of_timesteps = []
-    if counter in list_of_timesteps and not paused:
+    if counter in important_timesteps and counter != last_important_timestep:
         paused = True  # Pause the animation at important time steps
-        print("This is an important time step. We need to save it.")
+        last_important_timestep = counter
+        print(f"This is an important time step: {counter}. We need to save it.")
+
 
     for ant in ants:
         food, food_source = ant.move(adjacency_list, counter=counter, ant_number=ant)
@@ -361,8 +370,10 @@ while running:
 
     if widgets_draw:
         pygame_widgets.update(events)  # Update widgets only if widgets_draw is True
+
     pygame.display.update()
     pygame.display.flip()
+
 
 
 
